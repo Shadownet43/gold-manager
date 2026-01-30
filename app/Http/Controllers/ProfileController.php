@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use Symfony\Component\Mailer\Exception\TransportException;
 
 class ProfileController extends Controller
 {
@@ -40,9 +39,12 @@ class ProfileController extends Controller
                 set_time_limit(90);
                 $user->sendEmailVerificationNotification();
                 $status = 'Profil berhasil diperbarui. Cek email untuk link verifikasi.';
-            } catch (TransportException $e) {
+            } catch (\Throwable $e) {
                 Log::warning('Email verifikasi gagal dikirim: ' . $e->getMessage());
-                $status = 'Profil berhasil diperbarui. Pengiriman email verifikasi gagal (timeout/koneksi). Tambahkan MAIL_TIMEOUT=60 di Railway Variables lalu coba lagi.';
+                $hint = config('mail.default') === 'resend'
+                    ? 'Pastikan MAIL_MAILER=resend, RESEND_API_KEY, dan MAIL_FROM_ADDRESS=onboarding@resend.dev sudah di-set di Railway.'
+                    : 'Gunakan Resend: set MAIL_MAILER=resend dan RESEND_API_KEY di Railway (tidak timeout seperti SMTP).';
+                $status = 'Profil berhasil diperbarui. Pengiriman email verifikasi gagal. ' . $hint;
             }
         } else {
             $user->save();
