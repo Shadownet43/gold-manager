@@ -4,45 +4,56 @@
  * Vercel Serverless Entry Point for Laravel 12
  */
 
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
-
-// Set the base path for Laravel
-define('LARAVEL_START', microtime(true));
-
-// Pastikan direktori /tmp tersedia untuk Vercel serverless
-$tmpDirs = ['/tmp/views', '/tmp/cache', '/tmp/sessions', '/tmp/logs'];
-foreach ($tmpDirs as $dir) {
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
+// 1. Setup /tmp directories FIRST
+foreach (['/tmp/views', '/tmp/cache', '/tmp/sessions', '/tmp/logs'] as $dir) {
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
 }
 
-// Set environment variables untuk Vercel
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
-$_SERVER['VIEW_COMPILED_PATH'] = '/tmp/views';
+// 2. Set environment
+$_ENV['VIEW_COMPILED_PATH'] = $_SERVER['VIEW_COMPILED_PATH'] = '/tmp/views';
 putenv('VIEW_COMPILED_PATH=/tmp/views');
 
+define('LARAVEL_START', microtime(true));
+
 try {
-    // Register the Composer autoloader
+    // 3. Autoload
     require __DIR__ . '/../vendor/autoload.php';
 
-    // Bootstrap Laravel 12 dan handle request (cara baru)
-    /** @var Application $app */
+    // 4. Bootstrap Laravel 12
     $app = require_once __DIR__ . '/../bootstrap/app.php';
+
+    // 5. Override view compiled path setelah app dibuat
+    $app->useStoragePath('/tmp');
     
-    // Laravel 12 menggunakan handleRequest() method
-    $app->handleRequest(Request::capture());
-    
+    // 6. Manually boot the application jika belum
+    if (!$app->hasBeenBootstrapped()) {
+        $app->bootstrapWith([
+            \Illuminate\Foundation\Bootstrap\LoadEnvironmentVariables::class,
+            \Illuminate\Foundation\Bootstrap\LoadConfiguration::class,
+            \Illuminate\Foundation\Bootstrap\HandleExceptions::class,
+            \Illuminate\Foundation\Bootstrap\RegisterFacades::class,
+            \Illuminate\Foundation\Bootstrap\RegisterProviders::class,
+            \Illuminate\Foundation\Bootstrap\BootProviders::class,
+        ]);
+    }
+
+    // 7. Override config setelah bootstrap
+    config(['view.compiled' => '/tmp/views']);
+
+    // 8. Handle request menggunakan kernel
+    $kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+    $request = \Illuminate\Http\Request::capture();
+    $response = $kernel->handle($request);
+    $response->send();
+    $kernel->terminate($request, $response);
+
 } catch (Throwable $e) {
-    // Tampilkan error untuk debugging
     http_response_code(500);
     header('Content-Type: application/json');
     echo json_encode([
         'error' => true,
         'message' => $e->getMessage(),
-        'file' => $e->getFile(),
+        'file' => basename($e->getFile()),
         'line' => $e->getLine(),
-        'trace' => explode("\n", $e->getTraceAsString())
     ], JSON_PRETTY_PRINT);
 }
