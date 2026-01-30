@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\ResendMailHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -34,25 +32,11 @@ class ProfileController extends Controller
         if ($user->email !== $validated['email']) {
             $user->email = $validated['email'];
             $user->email_verified_at = null;
-            $user->save();
-
-            try {
-                set_time_limit(90);
-                $user->sendEmailVerificationNotification();
-                $status = 'Profil berhasil diperbarui. Cek email untuk link verifikasi.';
-            } catch (\Throwable $e) {
-                Log::warning('Email verifikasi gagal dikirim: ' . $e->getMessage(), ['exception' => $e]);
-                $hint = config('mail.default') === 'resend'
-                    ? ResendMailHelper::getUserMessage($e)
-                    : 'Gunakan Resend: set MAIL_MAILER=resend dan RESEND_API_KEY di Railway (tidak timeout seperti SMTP).';
-                $status = 'Profil berhasil diperbarui. Pengiriman email verifikasi gagal. ' . $hint;
-            }
-        } else {
-            $user->save();
-            $status = 'Profil berhasil diperbarui.';
+            $user->sendEmailVerificationNotification();
         }
+        $user->save();
 
-        return back()->with('status', $status);
+        return back()->with('status', 'Profil berhasil diperbarui.');
     }
 
     public function updatePassword(Request $request)

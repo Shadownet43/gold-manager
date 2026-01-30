@@ -21,9 +21,9 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Isi `.env` untuk database dan (opsional) mail Gmail untuk verifikasi/lupa password:
+Isi `.env` untuk database dan (opsional) mail Gmail:
 
-- `DB_*` — koneksi database
+- `DB_*` — koneksi database (MySQL atau SQLite)
 - `MAIL_USERNAME` — Gmail Anda
 - `MAIL_PASSWORD` — Google App Password
 - `APP_URL` — URL aplikasi (mis. `http://127.0.0.1:8000`)
@@ -38,104 +38,119 @@ Buka `/register` untuk buat akun pertama.
 
 ---
 
-## Deploy ke Vercel + TiDB Cloud
+## Deploy ke Hosting Sendiri (cPanel / Shared Hosting)
 
-### 1. Setup TiDB Cloud (Database)
+### Persyaratan
 
-1. Buka [TiDB Cloud](https://tidbcloud.com/) dan buat akun gratis
-2. Buat cluster baru (pilih **Serverless** untuk free tier)
-3. Setelah cluster aktif, buka **Connect** dan catat:
-   - Host (contoh: `gateway01.ap-southeast-1.prod.aws.tidbcloud.com`)
-   - Port (biasanya `4000`)
-   - Username
-   - Password
-4. Buat database baru via SQL Editor:
-   ```sql
-   CREATE DATABASE gold_tracker;
-   ```
+- PHP 8.2+
+- MySQL 5.7+ atau MariaDB
+- Composer (untuk build di lokal, lalu upload)
+- Ekstensi PHP: mbstring, openssl, PDO, tokenizer, xml, ctype, json, bcmath, fileinfo
 
-### 2. Setup Vercel
+### 1. Build di komputer lokal
 
-1. Push repo ke GitHub (jika belum)
-2. Buka [Vercel](https://vercel.com/) dan import repo
-3. Tambahkan Environment Variables di Vercel:
-
-   | Variable | Value |
-   |----------|-------|
-   | `APP_NAME` | WoW Gold Tracker |
-   | `APP_ENV` | production |
-   | `APP_KEY` | (generate dengan `php artisan key:generate --show`) |
-   | `APP_DEBUG` | false |
-   | `APP_URL` | https://your-app.vercel.app |
-   | `DB_CONNECTION` | mysql |
-   | `DB_HOST` | (dari TiDB Cloud) |
-   | `DB_PORT` | 4000 |
-   | `DB_DATABASE` | gold_tracker |
-   | `DB_USERNAME` | (dari TiDB Cloud) |
-   | `DB_PASSWORD` | (dari TiDB Cloud) |
-   | `SESSION_DRIVER` | cookie |
-   | `SESSION_ENCRYPT` | true |
-   | `CACHE_STORE` | array |
-   | `MAIL_MAILER` | smtp |
-   | `MAIL_HOST` | smtp.gmail.com |
-   | `MAIL_PORT` | 587 |
-   | `MAIL_USERNAME` | (Gmail Anda) |
-   | `MAIL_PASSWORD` | (Google App Password) |
-   | `MAIL_ENCRYPTION` | tls |
-
-4. Deploy!
-
-### 3. Jalankan Migrasi
-
-Setelah deploy, jalankan migrasi database:
-
-**Opsi A:** Via Vercel CLI
 ```bash
-vercel env pull .env.production
-php artisan migrate --env=production --force
+composer install --optimize-autoloader --no-dev
+php artisan key:generate --show
+# Catat APP_KEY yang muncul
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 ```
 
-**Opsi B:** Via TiDB Cloud SQL Editor
-- Export SQL dari lokal: `php artisan schema:dump`
-- Jalankan SQL di TiDB Cloud SQL Editor
+### 2. Buat database di hosting
+
+- Login cPanel → MySQL Databases
+- Buat database baru (mis. `username_gold`)
+- Buat user MySQL dan beri akses ke database tersebut
+- Catat: nama database, username, password
+
+### 3. Upload file ke hosting
+
+- Upload **seluruh isi folder project** ke hosting (FTP/File Manager), **kecuali**:
+  - `node_modules/`
+  - `.env` (akan dibuat manual di server)
+  - `.git/`
+- Pastikan struktur folder tetap (app, config, public, routes, dll.)
+
+### 4. Set document root ke folder `public`
+
+- Di cPanel: **Domains** → **Domains** → pilih domain → **Document Root**
+- Set ke: `public_html/gold-manager/public` (sesuaikan path jika beda)
+- Atau pindahkan isi `public/*` ke `public_html/` dan sesuaikan path di `index.php` (biasanya hosting punya panduan Laravel)
+
+### 5. Buat file `.env` di server
+
+Copy dari `.env.example`, lalu isi:
+
+```env
+APP_NAME="WoW Gold Tracker"
+APP_ENV=production
+APP_KEY=base64:xxxxx   # dari langkah 1
+APP_DEBUG=false
+APP_URL=https://domainanda.com
+
+DB_CONNECTION=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_DATABASE=username_gold
+DB_USERNAME=username_db
+DB_PASSWORD=password_db
+
+SESSION_DRIVER=database
+CACHE_STORE=database
+
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_google_app_password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="${MAIL_USERNAME}"
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+(Ganti `domainanda.com`, kredensial DB, dan mail sesuai hosting/domain Anda.)
+
+### 6. Jalankan migrasi di server
+
+Via SSH (jika tersedia):
+
+```bash
+cd /path/ke/project
+php artisan migrate --force
+php artisan db:seed --class=SettingSeeder --force
+```
+
+Atau via **Terminal** di cPanel (jika ada), atau import SQL hasil `php artisan schema:dump` dari lokal ke phpMyAdmin.
+
+### 7. Permission folder
+
+Pastikan folder berikut bisa ditulis (755 atau 775):
+
+- `storage/`
+- `bootstrap/cache/`
+
+Biasanya: `chmod -R 775 storage bootstrap/cache`
 
 ---
 
-## Resend: Verifikasi Domain (agar bisa kirim ke semua email)
+## Environment Variables (Hosting)
 
-Akun Resend dalam **mode testing** hanya bisa mengirim ke email pemilik akun. Untuk kirim verifikasi ke email user lain:
-
-1. Buka [resend.com/domains](https://resend.com/domains)
-2. Klik **Add Domain** dan masukkan domain Anda (mis. `gold-tracker.com`)
-3. Tambahkan record DNS yang diminta Resend (MX, TXT, dll.)
-4. Setelah domain **Verified**, di Railway set:
-   - `MAIL_FROM_ADDRESS` = `noreply@domainanda.com` (atau subdomain yang Anda verifikasi)
-   - `MAIL_FROM_NAME` = WoW Gold Tracker
-5. Redeploy
-
-Sementara belum punya domain: gunakan email pemilik akun Resend saat register/ubah email untuk testing.
-
----
-
-## Environment Variables
-
-| Variable | Deskripsi | Default |
-|----------|-----------|---------|
-| `DB_CONNECTION` | Driver database | sqlite |
-| `SESSION_DRIVER` | Session storage | database |
-| `CACHE_STORE` | Cache storage | database |
-| `MAIL_MAILER` | resend (production) / smtp / log | log |
-| `RESEND_API_KEY` | API key dari Resend | - |
-| `MAIL_FROM_ADDRESS` | onboarding@resend.dev (testing) atau email domain terverifikasi | - |
+| Variable       | Deskripsi                    | Contoh                    |
+|----------------|------------------------------|---------------------------|
+| `APP_URL`      | URL lengkap situs            | `https://domainanda.com`  |
+| `DB_*`         | Koneksi MySQL dari cPanel   | -                         |
+| `MAIL_*`       | SMTP (Gmail atau SMTP hosting) | -                      |
+| `SESSION_DRIVER` | `database` atau `file`     | database                  |
 
 ---
 
 ## Tech Stack
 
 - **Backend:** Laravel 12 (PHP 8.2+)
-- **Database:** SQLite (lokal) / TiDB Cloud (production)
+- **Database:** MySQL / MariaDB
 - **Frontend:** Bootstrap 5, Chart.js, SweetAlert2
-- **Hosting:** Vercel (Serverless PHP)
 
 ---
 

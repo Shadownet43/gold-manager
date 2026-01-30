@@ -62,10 +62,6 @@ return [
             // ],
         ],
 
-        'resend' => [
-            'transport' => 'resend',
-        ],
-
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
@@ -112,13 +108,8 @@ return [
     */
 
     'from' => [
-        'address' => filter_var(env('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)
-            ?: env('MAIL_USERNAME', 'hello@example.com'),
-        // Jika MAIL_FROM_NAME literal "${APP_NAME}", gunakan APP_NAME
-        'name' => (function () {
-            $name = env('MAIL_FROM_NAME', env('APP_NAME', 'WoW Gold Tracker'));
-            return (str_contains((string) $name, '${') || $name === '') ? env('APP_NAME', 'WoW Gold Tracker') : $name;
-        })(),
+        'address' => env('MAIL_FROM_ADDRESS', env('MAIL_USERNAME', 'hello@example.com')),
+        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'WoW Gold Tracker')),
     ],
 
 ];

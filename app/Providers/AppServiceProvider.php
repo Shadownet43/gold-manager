@@ -22,10 +22,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Vercel Serverless: Setup paths di /tmp
-        if (isset($_ENV['VERCEL']) || env('VERCEL')) {
-            $this->setupVercelPaths();
-        }
         VerifyEmail::toMailUsing(function ($notifiable, $verificationUrl) {
             return (new MailMessage)
                 ->subject('Verifikasi Email - WoW Gold RMT Tracker')
@@ -49,27 +45,5 @@ class AppServiceProvider extends ServiceProvider
                     'expire' => $expire,
                 ]);
         });
-    }
-
-    /**
-     * Setup paths untuk Vercel serverless environment
-     */
-    protected function setupVercelPaths(): void
-    {
-        // Buat direktori yang diperlukan di /tmp
-        $directories = ['/tmp/views', '/tmp/cache', '/tmp/sessions', '/tmp/logs'];
-        foreach ($directories as $dir) {
-            if (!is_dir($dir)) {
-                @mkdir($dir, 0755, true);
-            }
-        }
-
-        // Set config untuk menggunakan /tmp
-        config([
-            'view.compiled' => '/tmp/views',
-            'cache.stores.file.path' => '/tmp/cache',
-            'session.files' => '/tmp/sessions',
-            'logging.channels.single.path' => '/tmp/logs/laravel.log',
-        ]);
     }
 }

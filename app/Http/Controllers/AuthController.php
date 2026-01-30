@@ -69,22 +69,11 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $emailSent = true;
-        try {
-            $user->sendEmailVerificationNotification();
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('Email verifikasi saat register gagal: ' . $e->getMessage());
-            $emailSent = false;
-            $emailError = \App\Support\ResendMailHelper::getUserMessage($e);
-        }
+        $user->sendEmailVerificationNotification();
 
         Auth::login($user);
         $request->session()->regenerate();
-        $redirect = redirect()->route('verification.notice');
-        if ($emailSent) {
-            return $redirect->with('status', 'Link verifikasi telah dikirim ke email Anda.');
-        }
-        return $redirect->with('error', 'Pengiriman email verifikasi gagal. ' . $emailError);
+        return redirect()->route('verification.notice')->with('status', 'Link verifikasi telah dikirim ke email Anda.');
     }
 
     public function logout(Request $request)

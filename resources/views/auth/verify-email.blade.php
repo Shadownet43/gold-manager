@@ -25,9 +25,6 @@
                 @if (session('status'))
                     <div class="alert alert-success">{{ session('status') }}</div>
                 @endif
-                @if (session('error'))
-                    <div class="alert alert-danger">{{ session('error') }}</div>
-                @endif
                 <p class="text-secondary mb-4">Link verifikasi telah dikirim ke <strong class="text-white">{{ Auth::user()->email }}</strong>. Klik link di email untuk memverifikasi akun.</p>
                 <form method="POST" action="{{ route('verification.send') }}">
                     @csrf
