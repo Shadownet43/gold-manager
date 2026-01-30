@@ -112,8 +112,10 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        // Gunakan MAIL_USERNAME jika MAIL_FROM_ADDRESS tidak valid (misal literal "${MAIL_USERNAME}" di Railway)
+        'address' => filter_var(env('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)
+            ?: env('MAIL_USERNAME', 'hello@example.com'),
+        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Example')),
     ],
 
 ];
