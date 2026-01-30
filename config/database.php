@@ -59,15 +59,9 @@ return [
             'strict' => false, // TiDB compatibility
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                // SSL untuk TiDB Cloud - gunakan CA cert yang sesuai OS
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', 
-                    PHP_OS_FAMILY === 'Windows' 
-                        ? (file_exists('C:/xampp/apache/bin/curl-ca-bundle.crt') 
-                            ? 'C:/xampp/apache/bin/curl-ca-bundle.crt' 
-                            : true) // true = use system CA
-                        : '/etc/ssl/certs/ca-certificates.crt'
-                ),
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('DB_SSL_VERIFY', false),
+                // SSL untuk TiDB Cloud
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', '/etc/ssl/certs/ca-certificates.crt'),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ]) : [],
         ],
 
