@@ -32,9 +32,13 @@ class ProfileController extends Controller
         if ($user->email !== $validated['email']) {
             $user->email = $validated['email'];
             $user->email_verified_at = null;
+            $user->save();
+            // Perpanjang batas waktu agar koneksi SMTP ke Gmail tidak timeout (Railway default 30s)
+            set_time_limit(90);
             $user->sendEmailVerificationNotification();
+        } else {
+            $user->save();
         }
-        $user->save();
 
         return back()->with('status', 'Profil berhasil diperbarui.');
     }
