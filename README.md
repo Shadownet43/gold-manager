@@ -1,6 +1,6 @@
 # WoW Gold RMT Tracker
 
-Aplikasi pencatatan pribadi untuk gold & penjualan RMT (WoW). Dibuat dengan Laravel.
+Aplikasi pencatatan pribadi untuk gold & penjualan RMT (WoW). Dibuat dengan Laravel 12.
 
 ## Fitur
 
@@ -11,7 +11,9 @@ Aplikasi pencatatan pribadi untuk gold & penjualan RMT (WoW). Dibuat dengan Lara
 - Verifikasi email & lupa password
 - Edit profil & ganti password
 
-## Instalasi
+---
+
+## Instalasi Lokal
 
 ```bash
 composer install
@@ -33,6 +35,91 @@ php artisan serve
 ```
 
 Buka `/register` untuk buat akun pertama.
+
+---
+
+## Deploy ke Vercel + TiDB Cloud
+
+### 1. Setup TiDB Cloud (Database)
+
+1. Buka [TiDB Cloud](https://tidbcloud.com/) dan buat akun gratis
+2. Buat cluster baru (pilih **Serverless** untuk free tier)
+3. Setelah cluster aktif, buka **Connect** dan catat:
+   - Host (contoh: `gateway01.ap-southeast-1.prod.aws.tidbcloud.com`)
+   - Port (biasanya `4000`)
+   - Username
+   - Password
+4. Buat database baru via SQL Editor:
+   ```sql
+   CREATE DATABASE gold_tracker;
+   ```
+
+### 2. Setup Vercel
+
+1. Push repo ke GitHub (jika belum)
+2. Buka [Vercel](https://vercel.com/) dan import repo
+3. Tambahkan Environment Variables di Vercel:
+
+   | Variable | Value |
+   |----------|-------|
+   | `APP_NAME` | WoW Gold Tracker |
+   | `APP_ENV` | production |
+   | `APP_KEY` | (generate dengan `php artisan key:generate --show`) |
+   | `APP_DEBUG` | false |
+   | `APP_URL` | https://your-app.vercel.app |
+   | `DB_CONNECTION` | mysql |
+   | `DB_HOST` | (dari TiDB Cloud) |
+   | `DB_PORT` | 4000 |
+   | `DB_DATABASE` | gold_tracker |
+   | `DB_USERNAME` | (dari TiDB Cloud) |
+   | `DB_PASSWORD` | (dari TiDB Cloud) |
+   | `SESSION_DRIVER` | cookie |
+   | `SESSION_ENCRYPT` | true |
+   | `CACHE_STORE` | array |
+   | `MAIL_MAILER` | smtp |
+   | `MAIL_HOST` | smtp.gmail.com |
+   | `MAIL_PORT` | 587 |
+   | `MAIL_USERNAME` | (Gmail Anda) |
+   | `MAIL_PASSWORD` | (Google App Password) |
+   | `MAIL_ENCRYPTION` | tls |
+
+4. Deploy!
+
+### 3. Jalankan Migrasi
+
+Setelah deploy, jalankan migrasi database:
+
+**Opsi A:** Via Vercel CLI
+```bash
+vercel env pull .env.production
+php artisan migrate --env=production --force
+```
+
+**Opsi B:** Via TiDB Cloud SQL Editor
+- Export SQL dari lokal: `php artisan schema:dump`
+- Jalankan SQL di TiDB Cloud SQL Editor
+
+---
+
+## Environment Variables
+
+| Variable | Deskripsi | Default |
+|----------|-----------|---------|
+| `DB_CONNECTION` | Driver database | sqlite |
+| `SESSION_DRIVER` | Session storage | database |
+| `CACHE_STORE` | Cache storage | database |
+| `MAIL_*` | Konfigurasi email SMTP | - |
+
+---
+
+## Tech Stack
+
+- **Backend:** Laravel 12 (PHP 8.2+)
+- **Database:** SQLite (lokal) / TiDB Cloud (production)
+- **Frontend:** Bootstrap 5, Chart.js, SweetAlert2
+- **Hosting:** Vercel (Serverless PHP)
+
+---
 
 ## License
 

@@ -18,6 +18,9 @@ return [
     |
     */
 
+    // Untuk Vercel serverless, gunakan 'cookie' atau 'database'
+    // Cookie: lebih cepat, tapi data terbatas (4KB)
+    // Database: lebih fleksibel, butuh TiDB Cloud
     'driver' => env('SESSION_DRIVER', 'database'),
 
     /*

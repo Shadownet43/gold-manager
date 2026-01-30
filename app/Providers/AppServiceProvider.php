@@ -14,7 +14,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Vercel Serverless: Gunakan /tmp untuk compiled views
+        if (env('VIEW_COMPILED_PATH')) {
+            $path = env('VIEW_COMPILED_PATH');
+            if (!is_dir($path)) {
+                mkdir($path, 0755, true);
+            }
+            config(['view.compiled' => $path]);
+        }
     }
 
     /**
