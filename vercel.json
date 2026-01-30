@@ -26,10 +26,12 @@
         }
     ],
     "env": {
+        "VERCEL": "1",
         "APP_ENV": "production",
         "APP_DEBUG": "true",
         "VIEW_COMPILED_PATH": "/tmp/views",
         "LOG_CHANNEL": "stderr",
-        "MYSQL_ATTR_SSL_CA": "/etc/ssl/certs/ca-certificates.crt"
+        "SESSION_DRIVER": "cookie",
+        "CACHE_STORE": "array"
     }
 }
