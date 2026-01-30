@@ -9,7 +9,7 @@ error_reporting(E_ALL);
 // Set the base path for Laravel
 define('LARAVEL_START', microtime(true));
 
-// Pastikan direktori /tmp tersedia
+// Pastikan direktori /tmp tersedia sebelum Laravel bootstrap
 $tmpDirs = ['/tmp/views', '/tmp/cache', '/tmp/sessions', '/tmp/logs'];
 foreach ($tmpDirs as $dir) {
     if (!is_dir($dir)) {
@@ -17,12 +17,19 @@ foreach ($tmpDirs as $dir) {
     }
 }
 
+// Set environment variable untuk view compiled path SEBELUM Laravel load
+$_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
+putenv('VIEW_COMPILED_PATH=/tmp/views');
+
 try {
     // Register the Composer autoloader
     require __DIR__ . '/../vendor/autoload.php';
 
     // Bootstrap Laravel
     $app = require_once __DIR__ . '/../bootstrap/app.php';
+    
+    // Override view.compiled config sebelum kernel handle
+    $app['config']->set('view.compiled', '/tmp/views');
 
     // Handle the request
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
