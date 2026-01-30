@@ -101,6 +101,22 @@ php artisan migrate --env=production --force
 
 ---
 
+## Resend: Verifikasi Domain (agar bisa kirim ke semua email)
+
+Akun Resend dalam **mode testing** hanya bisa mengirim ke email pemilik akun. Untuk kirim verifikasi ke email user lain:
+
+1. Buka [resend.com/domains](https://resend.com/domains)
+2. Klik **Add Domain** dan masukkan domain Anda (mis. `gold-tracker.com`)
+3. Tambahkan record DNS yang diminta Resend (MX, TXT, dll.)
+4. Setelah domain **Verified**, di Railway set:
+   - `MAIL_FROM_ADDRESS` = `noreply@domainanda.com` (atau subdomain yang Anda verifikasi)
+   - `MAIL_FROM_NAME` = WoW Gold Tracker
+5. Redeploy
+
+Sementara belum punya domain: gunakan email pemilik akun Resend saat register/ubah email untuk testing.
+
+---
+
 ## Environment Variables
 
 | Variable | Deskripsi | Default |
@@ -108,7 +124,9 @@ php artisan migrate --env=production --force
 | `DB_CONNECTION` | Driver database | sqlite |
 | `SESSION_DRIVER` | Session storage | database |
 | `CACHE_STORE` | Cache storage | database |
-| `MAIL_*` | Konfigurasi email SMTP | - |
+| `MAIL_MAILER` | resend (production) / smtp / log | log |
+| `RESEND_API_KEY` | API key dari Resend | - |
+| `MAIL_FROM_ADDRESS` | onboarding@resend.dev (testing) atau email domain terverifikasi | - |
 
 ---
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ResendMailHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,7 +34,12 @@ class EmailVerificationController extends Controller
         if (Auth::user()->hasVerifiedEmail()) {
             return redirect('/');
         }
-        Auth::user()->sendEmailVerificationNotification();
-        return back()->with('status', 'Link verifikasi baru telah dikirim ke email Anda.');
+        try {
+            Auth::user()->sendEmailVerificationNotification();
+            return back()->with('status', 'Link verifikasi baru telah dikirim ke email Anda.');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Resend verifikasi gagal: ' . $e->getMessage());
+            return back()->with('error', 'Pengiriman link verifikasi gagal. ' . ResendMailHelper::getUserMessage($e));
+        }
     }
 }

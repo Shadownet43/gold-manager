@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\ResendMailHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -42,12 +43,9 @@ class ProfileController extends Controller
             } catch (\Throwable $e) {
                 Log::warning('Email verifikasi gagal dikirim: ' . $e->getMessage(), ['exception' => $e]);
                 $hint = config('mail.default') === 'resend'
-                    ? 'Pastikan MAIL_MAILER=resend, RESEND_API_KEY, dan MAIL_FROM_ADDRESS=onboarding@resend.dev sudah di-set di Railway.'
+                    ? ResendMailHelper::getUserMessage($e)
                     : 'Gunakan Resend: set MAIL_MAILER=resend dan RESEND_API_KEY di Railway (tidak timeout seperti SMTP).';
                 $status = 'Profil berhasil diperbarui. Pengiriman email verifikasi gagal. ' . $hint;
-                if (config('app.debug')) {
-                    $status .= ' [Debug: ' . $e->getMessage() . ']';
-                }
             }
         } else {
             $user->save();
