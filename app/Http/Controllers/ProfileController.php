@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 class ProfileController extends Controller
 {
@@ -33,14 +35,21 @@ class ProfileController extends Controller
             $user->email = $validated['email'];
             $user->email_verified_at = null;
             $user->save();
-            // Perpanjang batas waktu agar koneksi SMTP ke Gmail tidak timeout (Railway default 30s)
-            set_time_limit(90);
-            $user->sendEmailVerificationNotification();
+
+            try {
+                set_time_limit(90);
+                $user->sendEmailVerificationNotification();
+                $status = 'Profil berhasil diperbarui. Cek email untuk link verifikasi.';
+            } catch (TransportException $e) {
+                Log::warning('Email verifikasi gagal dikirim: ' . $e->getMessage());
+                $status = 'Profil berhasil diperbarui. Pengiriman email verifikasi gagal (timeout/koneksi). Tambahkan MAIL_TIMEOUT=60 di Railway Variables lalu coba lagi.';
+            }
         } else {
             $user->save();
+            $status = 'Profil berhasil diperbarui.';
         }
 
-        return back()->with('status', 'Profil berhasil diperbarui.');
+        return back()->with('status', $status);
     }
 
     public function updatePassword(Request $request)
