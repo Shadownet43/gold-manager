@@ -4,14 +4,11 @@
     "functions": {
         "api/index.php": {
             "runtime": "vercel-php@0.7.2",
-            "maxDuration": 30
+            "maxDuration": 30,
+            "memory": 1024
         }
     },
     "routes": [
-        {
-            "src": "/(css|js|images|fonts)/(.+)",
-            "dest": "/public/$1/$2"
-        },
         {
             "src": "/favicon.ico",
             "dest": "/public/favicon.ico"
@@ -32,6 +29,7 @@
         "VIEW_COMPILED_PATH": "/tmp/views",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "cookie",
-        "CACHE_STORE": "array"
+        "CACHE_STORE": "array",
+        "BCRYPT_ROUNDS": "10"
     }
 }
