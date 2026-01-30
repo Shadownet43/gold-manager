@@ -2,10 +2,6 @@
 
 // Vercel Serverless Entry Point for Laravel
 
-// Set error reporting untuk debug
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 // Set the base path for Laravel
 define('LARAVEL_START', microtime(true));
 
@@ -17,21 +13,18 @@ foreach ($tmpDirs as $dir) {
     }
 }
 
-// Set environment variable untuk view compiled path SEBELUM Laravel load
+// Set environment variables SEBELUM Laravel load
 $_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
+$_SERVER['VIEW_COMPILED_PATH'] = '/tmp/views';
 putenv('VIEW_COMPILED_PATH=/tmp/views');
 
 try {
     // Register the Composer autoloader
     require __DIR__ . '/../vendor/autoload.php';
 
-    // Bootstrap Laravel
+    // Bootstrap Laravel dan handle request
     $app = require_once __DIR__ . '/../bootstrap/app.php';
     
-    // Override view.compiled config sebelum kernel handle
-    $app['config']->set('view.compiled', '/tmp/views');
-
-    // Handle the request
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 
     $response = $kernel->handle(
